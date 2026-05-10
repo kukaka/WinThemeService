@@ -1,0 +1,77 @@
+# .NET
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+[Oo]ut/
+
+# Build results
+*.dll
+*.exe
+*.pdb
+*.user
+*.rsuser
+*.suo
+*.cache
+*.dbmdl
+*.jfm
+*.pfx
+*.publishsettings
+
+# NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Visual Studio
+.vs/
+*.userprefs
+-User.pidb.user
+-User.pidb.user.lock
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+# Rider
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# MSBuild
+*.log
+*.msbuild.log
+*.msbuild.err
+*.msbuild.wrn
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Publish output
+publish/
+installer/*.exe
+*.msi
+*.mst
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

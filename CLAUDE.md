@@ -94,8 +94,17 @@ Tasks are created under `TaskFolderName = "WinThemeService"`:
 |-----------|---------|--------|
 | `WinThemeSwitcher_Light` | Daily at `day_start` | `WinThemeService.exe --light` |
 | `WinThemeSwitcher_Dark` | Daily at `day_end` | `WinThemeService.exe --dark` |
+| `WinThemeSwitcher_Startup` | System startup (1 min delay) | `WinThemeService.exe --autoswitch` |
 
-The app checks `e.Args` at startup. If arguments are present (`--light` or `--dark`), it performs the theme switch and exits immediately without showing the UI.
+The app checks `e.Args` at startup. If arguments are present (`--light`, `--dark`, or `--autoswitch`), it performs the theme switch and exits immediately without showing the UI.
+
+### Startup Auto-Switch
+
+The `--autoswitch` task runs on system startup to handle cases where the scheduled task was missed (e.g., computer was off at the scheduled switch time). When triggered:
+1. Reads current time and compares against `day_start` and `day_end`
+2. Determines the correct theme for the current time
+3. Checks the actual system theme from registry
+4. If they differ, performs the switch
 
 ## Config File
 
@@ -146,6 +155,7 @@ dotnet run
 # Run with CLI argument (for Task Scheduler, no UI)
 dotnet run -- --light
 dotnet run -- --dark
+dotnet run -- --autoswitch
 ```
 
 ## Environment
@@ -200,6 +210,11 @@ dotnet run -- --dark
 2. **CLI argument parsing**
    - Check `e.Args` at startup to detect scheduled invocations
    - Exit immediately after performing the action when args are present
+
+3. **Startup auto-switch for missed tasks**
+   - Use `BootTrigger` with a 1-minute delay to ensure system is ready
+   - The `--autoswitch` argument compares current time against schedule to determine correct theme
+   - Handles cases where computer was off at scheduled switch time
 
 ### Logging
 

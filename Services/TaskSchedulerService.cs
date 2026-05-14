@@ -10,6 +10,7 @@ public class TaskSchedulerService
     private const string TaskFolderName = "WinThemeService";
     private const string LightTaskName = "WinThemeSwitcher_Light";
     private const string DarkTaskName = "WinThemeSwitcher_Dark";
+    private const string StartupTaskName = "WinThemeSwitcher_Startup";
 
     private readonly string _exePath;
 
@@ -32,6 +33,7 @@ public class TaskSchedulerService
             // Remove existing tasks
             RemoveTask(ts, folder, LightTaskName);
             RemoveTask(ts, folder, DarkTaskName);
+            RemoveTask(ts, folder, StartupTaskName);
 
             // Create light task (runs at day start - switches to light)
             CreateTimeTriggeredTask(ts, folder, LightTaskName, dayStart, "--light");
@@ -39,7 +41,10 @@ public class TaskSchedulerService
             // Create dark task (runs at day end - switches to dark)
             CreateTimeTriggeredTask(ts, folder, DarkTaskName, dayEnd, "--dark");
 
-            Log.Information("Scheduled tasks created: Light at {DayStart}, Dark at {DayEnd}", dayStart, dayEnd);
+            // Create startup task (runs on system startup - auto switches based on time)
+            CreateStartupTriggeredTask(ts, folder, StartupTaskName, "--autoswitch");
+
+            Log.Information("Scheduled tasks created: Light at {DayStart}, Dark at {DayEnd}, Startup check enabled", dayStart, dayEnd);
         }
         catch (Exception ex)
         {
@@ -76,6 +81,29 @@ public class TaskSchedulerService
         td.Actions.Add(new ExecAction(_exePath, argument));
 
         folder.RegisterTaskDefinition(taskName, td);
+    }
+
+    private void CreateStartupTriggeredTask(TaskService ts, TaskFolder folder, string taskName, string argument)
+    {
+        var td = ts.NewTask();
+        td.RegistrationInfo.Description = "WinThemeService - Auto switch on startup";
+        td.Principal.LogonType = TaskLogonType.InteractiveToken;
+        td.Settings.StartWhenAvailable = true;
+        td.Settings.DisallowStartIfOnBatteries = false;
+        td.Settings.StopIfGoingOnBatteries = false;
+
+        // Create boot trigger (runs at system startup)
+        var trigger = new BootTrigger
+        {
+            Delay = TimeSpan.FromMinutes(1) // Delay by 1 minute to ensure system is ready
+        };
+        td.Triggers.Add(trigger);
+
+        // Action: run the executable with argument
+        td.Actions.Add(new ExecAction(_exePath, argument));
+
+        folder.RegisterTaskDefinition(taskName, td);
+        Log.Information("Startup trigger task created: {TaskName}", taskName);
     }
 
     private void RemoveTask(TaskService ts, TaskFolder folder, string taskName)

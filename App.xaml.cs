@@ -49,6 +49,9 @@ public partial class App : Application
             return;
         }
 
+        // Check and apply correct theme based on current time (handles missed scheduled tasks)
+        CheckAndApplyThemeOnStartup();
+
         // Apply system theme to app chrome
         UpdateAppTheme();
 
@@ -76,6 +79,10 @@ public partial class App : Application
                     Log.Information("Command line: switching to dark theme");
                     _themeService?.SetTheme(AppTheme.Dark);
                     break;
+                case "--autoswitch":
+                    Log.Information("Command line: auto switch based on schedule");
+                    CheckAndApplyThemeOnStartup();
+                    break;
             }
         }
     }
@@ -91,6 +98,55 @@ public partial class App : Application
 
         Wpf.Ui.Appearance.ApplicationThemeManager.Apply(wpfTheme);
         Log.Information("App chrome theme set to {Theme}", wpfTheme);
+    }
+
+    private void CheckAndApplyThemeOnStartup()
+    {
+        if (_themeService == null || _configService == null) return;
+
+        var config = _configService.Config;
+        if (!config.AutoSwitch) return;
+
+        var desiredTheme = GetDesiredThemeByTime(config.DayStart, config.DayEnd);
+        var currentTheme = _themeService.CurrentTheme;
+
+        if (desiredTheme != currentTheme)
+        {
+            Log.Information("Startup check: desired={Desired}, current={Current}, switching",
+                desiredTheme, currentTheme);
+            _themeService.SetTheme(desiredTheme);
+        }
+        else
+        {
+            Log.Information("Startup check: desired={Desired}, current={Current}, no switch needed",
+                desiredTheme, currentTheme);
+        }
+    }
+
+    private AppTheme GetDesiredThemeByTime(string dayStart, string dayEnd)
+    {
+        try
+        {
+            var now = DateTime.Now.TimeOfDay;
+            var start = TimeSpan.Parse(dayStart);
+            var end = TimeSpan.Parse(dayEnd);
+
+            // If start < end (e.g., 08:00 to 19:00): light during [start, end), dark otherwise
+            // If start > end (e.g., 19:00 to 08:00): light during [end, start), dark otherwise
+            if (start < end)
+            {
+                return now >= start && now < end ? AppTheme.Light : AppTheme.Dark;
+            }
+            else
+            {
+                return now >= end || now < start ? AppTheme.Light : AppTheme.Dark;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to parse schedule times, defaulting to light");
+            return AppTheme.Light;
+        }
     }
 
     private void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
